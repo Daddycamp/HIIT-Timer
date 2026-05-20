@@ -159,9 +159,21 @@
     border-radius: 8px;
     padding: 5px 8px;
     cursor: pointer;
-    max-width: 140px;
+    max-width: 130px;
     -webkit-appearance: none;
   }
+  .btn-reload-voice {
+    font-size: 14px;
+    background: rgba(118,118,128,0.12);
+    color: var(--muted);
+    border: none;
+    border-radius: 8px;
+    padding: 5px 8px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.2s;
+  }
+  .btn-reload-voice:active { transform: rotate(180deg); }
 
   /* ── GLOBAL PROGRESS ─────────────────────────────────────────────────── */
   .global-progress {
@@ -554,6 +566,7 @@
       <select id="voiceSelect" class="voice-select" onchange="onVoiceChange(this.value)" title="Stimme wählen">
         <option>Stimmen laden…</option>
       </select>
+      <button class="btn-reload-voice" onclick="reloadVoices()" title="Stimmen neu laden">↺</button>
     </div>
   </header>
 
@@ -671,14 +684,33 @@ function pickBestVoice(voices) {
   if (network) return network;
   return de[0];
 }
+let voiceLoadAttempts = 0;
+
 function loadVoices() {
   const voices = window.speechSynthesis.getVoices();
+  const deVoices = voices.filter(v => v.lang.startsWith('de'));
+
+  // iOS sometimes returns empty list on first call – retry up to 20x
+  if (!deVoices.length && voiceLoadAttempts < 20) {
+    voiceLoadAttempts++;
+    setTimeout(loadVoices, 300);
+    return;
+  }
+
   if (!voices.length) return;
   selectedVoice = pickBestVoice(voices);
+  renderVoiceDropdown(deVoices);
+}
+
+function renderVoiceDropdown(deVoices) {
   const sel = document.getElementById('voiceSelect');
   if (!sel) return;
   sel.innerHTML = '';
-  voices.filter(v => v.lang.startsWith('de')).forEach(v => {
+  if (!deVoices.length) {
+    sel.innerHTML = '<option>Keine DE-Stimmen</option>';
+    return;
+  }
+  deVoices.forEach(v => {
     const opt = document.createElement('option');
     opt.value = v.name;
     opt.textContent = v.name + (v.localService ? '' : ' ✦');
@@ -686,6 +718,14 @@ function loadVoices() {
     sel.appendChild(opt);
   });
 }
+
+function reloadVoices() {
+  voiceLoadAttempts = 0;
+  window.speechSynthesis.cancel();
+  loadVoices();
+  setTimeout(() => speakText('Stimme geladen'), 400);
+}
+
 window.speechSynthesis.onvoiceschanged = loadVoices;
 loadVoices();
 
@@ -973,8 +1013,12 @@ function startApp() {
     window.speechSynthesis.speak(unlock);
   }
 
-  // Reload voices (iOS sometimes needs this after user gesture)
+  // Reload voices (iOS needs this after user gesture to expose enhanced voices)
+  voiceLoadAttempts = 0;
   loadVoices();
+  // Extra delayed reload – iOS enhanced voices may take a moment
+  setTimeout(() => { voiceLoadAttempts = 0; loadVoices(); }, 1000);
+  setTimeout(() => { voiceLoadAttempts = 0; loadVoices(); }, 3000);
 
   // Hide splash with animation
   const splash = document.getElementById('splash');
