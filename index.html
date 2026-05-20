@@ -868,6 +868,9 @@ function handleAudio() {
     if (step.type === 'rest') beepEnd();
     if (step.type === 'stretch') beepStart();
     if (step.type === 'longrest') { beepPause(); setTimeout(()=>speakText('Lange Pause'), 300); }
+    if (step.type === 'work' && step.stationIdx === 0 && step.setNum === 1) {
+      setTimeout(()=>speakText("Let's go!"), 300);
+    }
     if (step.type === 'stationchange') { beepEnd(); setTimeout(()=>speakText('Station wechseln'), 300); }
   }
 
