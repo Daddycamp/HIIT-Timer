@@ -581,8 +581,20 @@
       <button class="sel-btn active" data-val="8" onclick="selectStations(8)">8</button>
       <button class="sel-btn" data-val="10" onclick="selectStations(10)">10</button>
       <button class="sel-btn" data-val="12" onclick="selectStations(12)">12</button>
+      <button class="sel-btn" data-val="14" onclick="selectStations(14)">14</button>
+      <button class="sel-btn" data-val="16" onclick="selectStations(16)">16</button>
     </div>
     <div class="sel-info" id="selInfo">8 Stationen · 4× Kraft + 4× Ausdauer</div>
+  </div>
+
+  <!-- RUNDEN AUSWAHL -->
+  <div class="station-selector" id="roundSelector">
+    <span class="sel-label">Runden</span>
+    <div class="selector-btns">
+      <button class="sel-btn" data-rnd="2" onclick="selectRounds(2)">2 Runden</button>
+      <button class="sel-btn active" data-rnd="3" onclick="selectRounds(3)">3 Runden</button>
+    </div>
+    <div class="sel-info" id="roundInfo">3 Runden</div>
   </div>
 
   <!-- MAIN TIMER -->
@@ -746,6 +758,7 @@ function onVoiceChange(name) {
 
 // ─── PROGRAM BUILDER ─────────────────────────────────────────────────────────
 let numStations = 8;
+let numRounds = 3;
 const STRETCH_COUNT = 8;
 let program = [], BLOCKS = [], totalSec = 0;
 
@@ -809,9 +822,17 @@ function buildProgram() {
 function selectStations(n) {
   if (running) return;
   numStations = n;
-  document.querySelectorAll('.sel-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.val) === n));
+  document.querySelectorAll('.sel-btn[data-val]').forEach(b => b.classList.toggle('active', parseInt(b.dataset.val) === n));
   const k = Math.ceil(n/2), a = Math.floor(n/2);
   document.getElementById('selInfo').textContent = `${n} Stationen · ${k}× Kraft + ${a}× Ausdauer`;
+  buildProgram(); currentStep = 0; currentSec = 0;
+  renderPlan(); updateDisplay();
+}
+function selectRounds(r) {
+  if (running) return;
+  numRounds = r;
+  document.querySelectorAll('.sel-btn[data-rnd]').forEach(b => b.classList.toggle('active', parseInt(b.dataset.rnd) === r));
+  document.getElementById('roundInfo').textContent = `${r} Runden`;
   buildProgram(); currentStep = 0; currentSec = 0;
   renderPlan(); updateDisplay();
 }
@@ -983,6 +1004,7 @@ function resetTimer() {
   document.getElementById('completeBanner').classList.remove('show');
   document.getElementById('mainDisplay').style.display = 'flex';
   document.getElementById('stationSelector').style.display = 'flex';
+  document.getElementById('roundSelector').style.display = 'flex';
   buildProgram(); renderPlan(); updateDisplay();
 }
 function skipStep() {
@@ -994,6 +1016,7 @@ function showComplete() {
   running=false; clearInterval(timer);
   document.getElementById('mainDisplay').style.display = 'none';
   document.getElementById('stationSelector').style.display = 'none';
+  document.getElementById('roundSelector').style.display = 'none';
   document.getElementById('completeBanner').classList.add('show');
   document.getElementById('globalFill').style.width = '100%';
   document.getElementById('miniFill').style.width = '100%';
